@@ -73,4 +73,4 @@ const productInventorySchema = mongoose.Schema( // to be checked (isBox - Box)..
     }
 );
 
-module.exports = mongoose.model('ProductInventory', productInventorySchema);
+module.exports = mongoose.models.ProductInventory || mongoose.model('ProductInventory', productInventorySchema);

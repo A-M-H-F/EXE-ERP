@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const { uploadProfilePictureStorage } = require('../../config/storage');
 const {
     addNewUser,
     updateUserPassword,
@@ -9,8 +10,10 @@ const {
     getAllUsers,
     getSpecificUser,
     getUserInfo,
-    updateUserStatus
-} = require('../../controllers/user/userCtrls');
+    updateUserStatus,
+    uploadProfilePicture,
+    getAllUsersForSelection
+} = require('../../controllers/user');
 const auth = require('../../middleware/auth');
 
 // routes: 10
@@ -26,14 +29,19 @@ router.get('/info', auth, getUserInfo);
 router.put('/pass', auth, updateUserPassword);
 
 // @desc    Update User Name
-// @route   PUT /user/name
+// @route   PUT /user/username
 // @access  Private - authMiddleware
-router.put('/name', auth, updateUserName);
+router.put('/username', auth, updateUserName);
 
 // @desc    Get All Users
 // @route   GET /user
 // @access  Private - (authMiddleware, authMiddleware)
 router.get('/', auth, getAllUsers);
+
+// @desc    Get All Users (name - _id) only
+// @route   GET /user/selection
+// @access  Private - authMiddleware
+router.get('/selection', auth, getAllUsersForSelection);
 
 // @desc    Get Specific user
 // @route   GET /user/:id
@@ -64,5 +72,10 @@ router.put('/role/:id', auth, updateUserRoleAdmin);
 // @route   PUT /user/status/:id
 // @access  Private - authMiddleware
 router.put('/status/:id', auth, updateUserStatus);
+
+// @desc    Upload profile picture
+// @route   PUT /user/profile/picture
+// @access  Private - authMiddleware
+router.put('/profile/picture', auth, uploadProfilePictureStorage.single('image'), uploadProfilePicture);
 
 module.exports = router

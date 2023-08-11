@@ -32,16 +32,17 @@ app.use(helmet());
 // app.set('trust proxy', 1);
 app.use(express.json());
 app.use(cookieParser());
-// app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false }));
 
 // Routes
 app.use('/', express.static(path.join(__dirname, 'public')));
 app.use('/', require('./routes/main'));
 
 const webRoutes = express.Router();
-// webRoutes.use(cors(corsOptionsWeb));
+webRoutes.use(cors(corsOptionsWeb));
 // Auth routes...@ // auth request limiters
 webRoutes.use('/auth', require('./routes/auth'));
+webRoutes.use('/images', require('./routes/image')); // notification routes
 
 // Routes...@
 // webRoutes.use(webRequestLimiter); // request limiter
@@ -57,7 +58,13 @@ webRoutes.use('/service', require('./routes/service')); // service routes
 webRoutes.use('/subscription', require('./routes/subscription')); // subscriptions routes
 webRoutes.use('/subscription-invoice', require('./routes/subscriptionInvoice')); // subscription invoice
 webRoutes.use('/product', require('./routes/product')); // products routes
-webRoutes.use('/product-inventory', require('./routes/productInventory')); // products routes
+webRoutes.use('/product-inventory', require('./routes/productInventory')); // products inventory routes
+webRoutes.use('/invoice', require('./routes/invoice')); // invoice routes
+webRoutes.use('/maintenance-invoice', require('./routes/maintenanceInvoice')); // maintenance invoice routes
+webRoutes.use('/notification', require('./routes/notification')); // notification routes
+webRoutes.use('/boards', require('./routes/scrumBoard')); // scrum boards routes
+webRoutes.use('/boards/sections', require('./routes/scrumBoardSection')); // scrum boards sections routes
+webRoutes.use('/boards/tasks', require('./routes/scrumBoardTask')); // scrum boards tasks routes
 
 app.use('/', webRoutes);
 

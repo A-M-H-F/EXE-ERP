@@ -43,4 +43,4 @@ const subscriptionInvoiceSchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model('SubscriptionInvoice', subscriptionInvoiceSchema);
+module.exports = mongoose.models.SubscriptionInvoice || mongoose.model('SubscriptionInvoice', subscriptionInvoiceSchema);

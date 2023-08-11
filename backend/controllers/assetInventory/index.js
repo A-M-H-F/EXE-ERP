@@ -22,7 +22,7 @@ const getAllAssetInventory = asyncHandler(async (req, res) => {
 // @route   GET /asset-inventory/status/:id
 // @access  Private - authMiddleware
 const getAssetsInventoryByStatus = asyncHandler(async (req, res) => {
-    if (!req.params.id || req.params.id !== 'active' || req.params.id !== 'inactive') {
+    if (!req.params.id || !['active', 'inactive'].includes(req.params.id)) {
         res.status(400);
         throw new Error('Please try again');
     }

@@ -35,4 +35,4 @@ const internetServiceSchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model('InternetService', internetServiceSchema);
+module.exports = mongoose.models.InternetService || mongoose.model('InternetService', internetServiceSchema);

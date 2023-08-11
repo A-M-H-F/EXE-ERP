@@ -46,4 +46,4 @@ const subscriptionSchema = mongoose.Schema( // update this to be one collection 
     }
 );
 
-module.exports = mongoose.model('Subscription', subscriptionSchema);
+module.exports = mongoose.models.Subscription || mongoose.model('Subscription', subscriptionSchema);

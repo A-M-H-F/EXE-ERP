@@ -17,9 +17,13 @@ const userSchema = mongoose.Schema(
             unique: true,
             required: true
         },
-        role: { 
+        picture: {
+            type: String,
+            default: ''
+        },
+        role: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Role' 
+            ref: 'Role'
         },
         status: {
             type: String,
@@ -32,4 +36,4 @@ const userSchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ListItem, OrderedList, useToast } from '@chakra-ui/react'
-import { socketProvider } from '../../socketProvider';
+import { socketProvider } from '../../@socket/provider/socketProvider';
 
 
 const Test = () => {

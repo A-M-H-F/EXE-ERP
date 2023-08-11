@@ -5,11 +5,11 @@ const customerSchema = mongoose.Schema(
         fullName: {
             type: String,
             unique: true,
-            required: true,
+            required: true
         },
         phoneNumber: {
             type: String,
-            required: true,
+            required: true
         },
         additionalPhoneNumbers: [
             {
@@ -34,7 +34,10 @@ const customerSchema = mongoose.Schema(
             },
             apartment: {
                 type: String
-            }
+            },
+            buildingImage: { // to be add for the routes
+                type: String
+            },
         },
         coordinates: {
             type: String,
@@ -62,4 +65,4 @@ const customerSchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model('Customer', customerSchema);
+module.exports = mongoose.models.Customer || mongoose.model('Customer', customerSchema);

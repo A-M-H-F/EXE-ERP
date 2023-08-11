@@ -70,4 +70,4 @@ const assetInventorySchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model('AssetInventory', assetInventorySchema);
+module.exports = mongoose.models.AssetInventory || mongoose.model('AssetInventory', assetInventorySchema);

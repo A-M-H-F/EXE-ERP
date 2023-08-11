@@ -28,4 +28,4 @@ const ispSchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model('Isp', ispSchema);
+module.exports = mongoose.models.Isp || mongoose.model('Isp', ispSchema);

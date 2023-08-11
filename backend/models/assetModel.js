@@ -27,4 +27,4 @@ const assetSchema = mongoose.Schema( // to be checked
     }
 );
 
-module.exports = mongoose.model('Asset', assetSchema);
+module.exports = mongoose.models.Asset || mongoose.model('Asset', assetSchema);

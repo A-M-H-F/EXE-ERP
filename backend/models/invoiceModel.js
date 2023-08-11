@@ -27,7 +27,7 @@ const invoiceSchema = mongoose.Schema(
         services: [
             {
                 service: { // panel: isDiscount 
-                    types: mongoose.Schema.Types.ObjectId,
+                    type: mongoose.Schema.Types.ObjectId,
                     ref: 'Service'
                 },
                 quantity: {
@@ -57,6 +57,10 @@ const invoiceSchema = mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
         },
+        collector: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
         printedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
@@ -65,6 +69,18 @@ const invoiceSchema = mongoose.Schema(
             type: String,
             enum: ['paid', 'unpaid'],
             default: 'unpaid'
+        },
+        paymentDate: {
+            type: Date
+        },
+        serialNumber: {
+            type: String,
+            unique: true
+        },
+        status: {
+            type: String,
+            enum: ['valid', 'cancelled'],
+            default: 'valid'
         }
     },
     {
@@ -72,4 +88,4 @@ const invoiceSchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model('Invoice', invoiceSchema);
+module.exports = mongoose.models.Invoice || mongoose.model('Invoice', invoiceSchema);

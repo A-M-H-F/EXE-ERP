@@ -97,7 +97,9 @@ const updateRole = asyncHandler(async (req, res) => {
 // @route   GET /role
 // @access  Private - authMiddleware
 const getAllRoles = asyncHandler(async (req, res) => {
-    const roles = await Role.find().lean();
+    const roles = await Role.find()
+    .select('name')
+    .lean();
 
     if (roles) {
         res.status(200).json(roles);

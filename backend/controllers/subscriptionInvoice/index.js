@@ -134,7 +134,7 @@ const getSubscriptionInvoiceByQrCode = asyncHandler(async (req, res) => { // to 
 // @route   GET /subscription-invoice/status/:id
 // @access  Private - authMiddleware
 const getSubscriptionInvoicesByPaymentStatus = asyncHandler(async (req, res) => {
-    if (!req.params.id || req.params.id !== 'paid' || req.params.id !== 'unpaid') {
+    if (!req.params.id || !['paid', 'unpaid'].includes(req.params.id)) {
         res.status(400);
         throw new Error('Please try again');
     }
@@ -298,8 +298,7 @@ const getSubscriptionInvoiceBySerialNumber = asyncHandler(async (req, res) => {
 const addNewSubscriptionInvoice = asyncHandler(async (req, res) => {
     const {
         customer,
-        service,
-        paymentStatus,
+        service
     } = req.body;
 
     if (!customer || !service) {
@@ -323,14 +322,9 @@ const addNewSubscriptionInvoice = asyncHandler(async (req, res) => {
         {
             customer: isCustomerExists._id,
             service: isInternetServiceExists._id,
-            invoiceDate: new Date(),
-            paymentStatus
+            invoiceDate: new Date()
         }
     );
-
-    if (paymentStatus === 'paid') {
-        result.paymentDate = new Date();
-    }
 
     // get latest one
     const getLastSubscriptionInvoice = await SubscriptionInvoice.findOne({})
@@ -358,7 +352,7 @@ const addNewSubscriptionInvoice = asyncHandler(async (req, res) => {
     const saveSubIn = await result.save();
 
     if (saveSubIn) {
-        res.status(200).json(result);
+        res.status(200).json(result._id);
     } else {
         res.status(400);
         throw new Error('Error creating new subscription invoice');
@@ -374,6 +368,11 @@ const printSubscriptionInvoice = asyncHandler(async (req, res) => {
     if (!req.params.id) {
         res.status(400);
         throw new Error('Error, try again');
+    }
+
+    if (!toBeCollectedNow) {
+        res.status(400);
+        throw new Error('Please check all fields');
     }
 
     const isSubscriptionInvoiceExists = await SubscriptionInvoice.findById(req.params.id);

@@ -9,11 +9,14 @@ const {
     getInvoicesIssuedBy,
     getInvoicesByPaymentStatus,
     addNewInvoice,
-    updateInvoice
+    addInvoiceByTechnician,
+    printInvoice,
+    updateInvoiceStatus,
+    updateInvoicePaymentStatus
 } = require('../../controllers/invoice');
 const auth = require('../../middleware/auth');
 
-// routes = 9
+// routes = 13
 
 // @desc    Get invoices
 // @route   GET /invoice
@@ -26,7 +29,7 @@ router.get('/', auth, getAllInvoices);
 router.get('/:id', auth, getSpecificInvoiceInfo);
 
 // @desc    Get Customer invoices
-// @route   GET /invoice/customer
+// @route   GET /invoice/customer/:id
 // @access  Private - authMiddleware
 router.get('/customer/:id', auth, getCustomerInvoices);
 
@@ -55,14 +58,29 @@ router.get('/issued-by/:id', auth, getInvoicesIssuedBy);
 // @access  Private - authMiddleware
 router.get('/payment/:id', auth, getInvoicesByPaymentStatus);
 
-// @desc    Add new Invoice
-// @route   POST /invoice
+// @desc    Add new Invoice by office user
+// @route   POST /invoice/office
 // @access  Private - authMiddleware
-router.post('/', auth, addNewInvoice);
+router.post('/office', auth, addNewInvoice);
 
-// @desc    Update Invoice
-// @route   PUT /invoice/:id
+// @desc    Add new Invoice by technician
+// @route   POST /invoice/technician
 // @access  Private - authMiddleware
-router.put('/:id', auth, updateInvoice);
+router.post('/technician', auth, addInvoiceByTechnician);
+
+// @desc    Print invoice
+// @route   PUT /invoice/print/:id
+// @access  Private - authMiddleware
+router.put('/print/:id', auth, printInvoice);
+
+// @desc    Update Invoice status
+// @route   PUT /invoice/status/:id
+// @access  Private - authMiddleware
+router.put('/status/:id', auth, updateInvoiceStatus);
+
+// @desc    Update Invoice payment status
+// @route   PUT /invoice/payment/:id
+// @access  Private - authMiddleware
+router.put('/payment/:id', auth, updateInvoicePaymentStatus);
 
 module.exports = router
