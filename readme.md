@@ -47,7 +47,7 @@
 2. **Draggable Scrum Boards**:
     - Organize tasks on scrum boards for efficient team collaboration and task management.
 
-3. **Team Chatting** (Coming Soon):
+3. **Team Chatting**:
     - Real-time team chat functionality for seamless communication among team members.
 
 4. **Roles**:
@@ -62,26 +62,26 @@
 7. **QR Code Scanner**:
     - Scan QR codes on invoices for quick access and verification.
 
-8. **Calendar** (Coming Soon):
+8. **Calendar**:
     - View and manage appointments, events, and important dates.
 
-9. **Inventory for Assets** (Coming Soon):
+9. **Inventory for Assets**:
     - Keep track of and manage company assets efficiently.
 
-10. **Inventory for Products** (Coming Soon):
+10. **Inventory for Products**:
     - Monitor and manage product inventory with ease.
 
 ## Pages and Apps Available
 
-1. **Dashboard** (In Progress...): Get an overview of system statistics and key performance indicators.
+1. **Dashboard**: Get an overview of system statistics and key performance indicators.
 
 2. **Users**: Manage user accounts and access permissions.
 
 3. **Roles**: Define and assign roles to control access and permissions.
 
-4. **Chat Rooms** (Coming Soon): Collaborate with team members through real-time chat rooms (Coming Soon).
+4. **Chat Rooms**: Collaborate with team members through real-time chat rooms (Coming Soon).
 
-5. **Notification** (Coming Soon): Stay informed with important notifications and updates.
+5. **Notification**: Stay informed with important notifications and updates.
 
 6. **Logs**: Access logs and audit trails for system activity monitoring.
 
@@ -93,27 +93,27 @@
 
 10. **Customers Subscriptions**: Monitor and manage customer subscriptions.
 
-11. **Office Invoices** (Coming Soon): Generate and manage invoices for office-related services.
+11. **Office Invoices**: Generate and manage invoices for office-related services.
 
-12. **Maintenance Invoices** (Coming Soon): Handle invoices related to maintenance services.
+12. **Maintenance Invoices**: Handle invoices related to maintenance services.
 
 13. **Subscription Invoices**: Manage invoices for subscription-based services.
 
-14. **Products** (Coming Soon): Maintain a catalog of products offered.
+14. **Products**: Maintain a catalog of products offered.
 
-15. **Products Inventory** (Coming Soon): Keep track of product inventory levels.
+15. **Products Inventory**: Keep track of product inventory levels.
 
-16. **Assets** (Coming Soon): Manage company assets efficiently.
+16. **Assets**: Manage company assets efficiently.
 
-17. **Assets Inventory** (Coming Soon): Track and maintain asset inventory.
+17. **Assets Inventory**: Track and maintain asset inventory.
 
 18. **Internet Services**: Manage and configure internet services.
 
-19. **IT Services** (Coming Soon): Handle and monitor IT-related services.
+19. **IT Services**: Handle and monitor IT-related services.
 
 20. **Scrum Board**: Organize and prioritize tasks using scrum boards.
 
-21. **Calendar** (Coming Soon): View and manage appointments, events, and important dates.
+21. **Calendar**: View and manage appointments, events, and important dates.
 
 **Coming Soon: File Manager**: Stay tuned for our upcoming file manager feature, designed to provide a user-friendly interface for managing all your files efficiently.
 
