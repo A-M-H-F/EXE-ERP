@@ -135,10 +135,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Screenshots
 Here are some screenshots of the ISP Management Platform in action:
 
-1. ![Roles](https://imgur.com/ttyYQsO)
-2. ![Users](https://imgur.com/wRPe0XY)
-3. ![Invoices](https://imgur.com/8ltjsZ5)
-4. ![Customers](https://imgur.com/2QyVxpi)
+1. ![Roles](https://i.imgur.com/ttyYQsO.png)
+2. ![Users](https://i.imgur.com/wRPe0XY.png)
+3. ![Invoices](https://i.imgur.com/8ltjsZ5.png)
+4. ![Customers](https://i.imgur.com/2QyVxpi.png)
 5. ![Scrum Board](https://i.imgur.com/iZirfVt.png)
 
 ### Short Description
