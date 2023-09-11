@@ -36,6 +36,8 @@
 
 **Media Storage in Node.js**: We've implemented secure media storage directly within Node.js, eliminating the need for third-party providers. This ensures data security and seamless access to your files.
 
+**Customizable Invoice Print Template**: Tailor your invoice print templates to match your branding and requirements, offering flexibility and a professional touch.
+
 1. **Tables**:
     - Create and manage tables with options for filtering, sorting, and date range filtering.
     - Fetch and display data from various sources.

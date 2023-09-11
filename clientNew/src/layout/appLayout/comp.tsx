@@ -2,6 +2,8 @@ import { Layout, theme } from 'antd'
 import AppRoutes from '../../routes/AppRoutes';
 import { FooterSection } from '@layout/footer';
 import { HeaderSection } from '@layout/header';
+import { useSelector } from 'react-redux';
+import { AuthState } from '@features/reducers/auth';
 const { Content } = Layout
 
 const AppLayout = () => {
@@ -9,10 +11,13 @@ const AppLayout = () => {
     token: { colorBgContainer },
   } = theme.useToken();
 
+  const { isLogged } = useSelector((state: AuthState) => state.auth)
+
   return (
     <>
       <Layout className="site-layout">
-        <HeaderSection />
+        {isLogged && <HeaderSection />}
+
 
         <Content
           style={{
