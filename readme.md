@@ -16,16 +16,18 @@
 - WebRTC (planned for the future)
 - REST APIs
 - Clusters
+- Cors (Cross-Origin Resource Sharing) Protection
 - and more...
 
 ### Frontend
-- Ant Design
+- Ant Design 5+
 - React
 - Redux
 - React Router
 - React-Beautiful-DND
 - React-to-Print
 - Socket.io Client
+- SWC Vite (Build in TypeScript)
 - and more...
 
 ## Features
