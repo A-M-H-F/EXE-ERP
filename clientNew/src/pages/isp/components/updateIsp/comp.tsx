@@ -1,0 +1,342 @@
+import { BorderlessTableOutlined, EditOutlined, MinusCircleOutlined, PhoneOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
+import apiService from '@api/index';
+import { dispatchGetISP, fetchISP } from '@features/actions/isp';
+import { AuthState } from '@features/reducers/auth';
+import { ISP, ISPListState } from '@features/reducers/isp';
+import { TokenState } from '@features/reducers/token';
+import { useSocket } from '@socket/provider/socketProvider';
+import { checkLength, checkWhiteSpaces } from '@utils/stringCheck';
+import { App, Button, Form, Input, Modal, Space, Spin, Tooltip } from 'antd'
+import { useEffect, useState } from 'react'
+import { CiLocationOn } from 'react-icons/ci';
+import { HiOutlineOfficeBuilding } from 'react-icons/hi';
+import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+
+type InitialStateProps = {
+    name: string,
+    address: string,
+    contactInfo: string,
+    code: number,
+}
+
+interface PhoneNumber {
+    key: number;
+    number: string;
+}
+
+type UpdateIspProps = {
+    isp: ISP
+}
+
+const UpdateIsp = ({ isp }: UpdateIspProps) => {
+    const initialState: InitialStateProps = {
+        name: isp.name,
+        address: isp.address,
+        contactInfo: isp?.contactInfo || '',
+        code: isp?.code
+    }
+
+    const ispList = useSelector((state: ISPListState) => state.ispList)
+    const token = useSelector((state: TokenState) => state.token)
+    const { message: messageApi } = App.useApp()
+    const { socketProvider } = useSocket()
+    const dispatch = useDispatch()
+    const { user: currentUser } = useSelector((state: AuthState) => state.auth)
+
+    useEffect(() => {
+        fetchISP(token).then((res: ISP[]) => {
+            dispatch(dispatchGetISP(res))
+        })
+    }, [])
+
+    // modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const showModal = () => {
+        setIsModalOpen(true)
+    }
+    const handleCancel = () => {
+        setIsModalOpen(false)
+    }
+
+    // loading
+    const [updating, setUpdating] = useState<boolean>(false)
+
+    // state
+    const [ispInfo, setIspInfo] = useState<InitialStateProps>(initialState)
+    const { name, address, contactInfo, code } = ispInfo
+
+    const handleInputChange = (e: any) => {
+        const { name, value } = e.target
+
+        setIspInfo({ ...ispInfo, [name]: String(value) })
+    }
+
+    // phone numbers
+    const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
+
+    const onAddPhone = () => {
+        const newKey = phoneNumbers.length;
+        setPhoneNumbers([...phoneNumbers, { key: newKey, number: '' }]);
+    }
+
+    const onChangeNumber = (newNumber: any, index: number) => {
+        const updatedNumbers = phoneNumbers.map(phone => {
+            if (phone.key === index) {
+                return { ...phone, number: newNumber }
+            }
+            return phone
+        })
+        setPhoneNumbers(updatedNumbers);
+    }
+
+    const onRemovePhone = (index: number) => {
+        const updatedNumbers = phoneNumbers.filter(phone => phone.key !== index);
+
+        const keyUpdated = [...updatedNumbers].map((phone, index) => (
+            {
+                key: index,
+                number: phone.number
+            }
+        ))
+
+        setPhoneNumbers(keyUpdated);
+    }
+
+    const handleUpdate = async () => {
+        if (phoneNumbers?.length <= 0) {
+            messageApi.open({
+                type: 'error',
+                content: 'Please add at least 1 phone number',
+                duration: 2
+            })
+            return
+        }
+        const checkPhones = phoneNumbers.some((phone) => checkWhiteSpaces(phone.number))
+        if (checkPhones) {
+            messageApi.open({
+                type: 'error',
+                content: 'Please check phone numbers, some contain only whitespace',
+                duration: 2
+            })
+            return
+        }
+
+        const updatedPhoneNumbers = phoneNumbers.map((phone) => phone.number)
+
+        // name
+        const nameWhiteSpaceCheck = checkWhiteSpaces(name)
+        const nameLength = checkLength(name, 3)
+        if (nameWhiteSpaceCheck) {
+            messageApi.open({
+                type: 'error',
+                content: 'Name should not contain only whitespace'
+            })
+            return
+        }
+        if (nameLength) {
+            messageApi.open({
+                type: 'error',
+                content: 'Name must be at least 4 characters long'
+            })
+            return
+        }
+
+        // address
+        const addressWhiteSpaceCheck = checkWhiteSpaces(address)
+        const addressLength = checkLength(address, 5)
+        if (addressWhiteSpaceCheck) {
+            messageApi.open({
+                type: 'error',
+                content: 'Address should not contain only whitespace'
+            })
+            return
+        }
+        if (addressLength) {
+            messageApi.open({
+                type: 'error',
+                content: 'Address must be at least 6 characters long'
+            })
+            return
+        }
+
+        if (!code) {
+            messageApi.error({
+                content: 'Please add a company code',
+                duration: 2
+            })
+            return;
+        }
+
+        const body = {
+            name,
+            address,
+            phoneNumbers: updatedPhoneNumbers,
+            contactInfo,
+            code
+        }
+
+        try {
+            setUpdating(true)
+
+            const { data } = await apiService.PUT(`/isp/${isp?._id}`, body, token)
+
+            const { message, updated } = data
+
+            messageApi.open({
+                type: 'success',
+                content: message,
+                duration: 2
+            })
+
+            socketProvider.emit('getAllIsp_to_server', { userId: currentUser?._id })
+
+            const updatedList = ispList?.map((target: ISP) => {
+                if (target._id === isp?._id) {
+                    return { ...updated }
+                }
+
+                return target
+            })
+            dispatch(dispatchGetISP(updatedList))
+
+            handleCancel()
+            setUpdating(false)
+        } catch (error: any) {
+            setUpdating(false)
+            messageApi.open({
+                type: 'error',
+                content: error?.response?.data?.message
+            })
+        }
+    }
+
+    useEffect(() => {
+        setIspInfo(initialState)
+
+        const updatedNumbers = isp?.phoneNumbers?.map((phone: any, index: any) => (
+            {
+                key: index,
+                number: phone
+            }
+        ))
+
+        setPhoneNumbers(updatedNumbers)
+    }, [])
+
+    return (
+        <>
+            <Tooltip title={'Update ISP Info'}>
+                <EditOutlined
+                    onClick={showModal}
+                    disabled={updating}
+                />
+            </Tooltip>
+
+            <Modal
+                title="Add New ISP"
+                open={isModalOpen}
+                onOk={handleUpdate}
+                onCancel={handleCancel}
+                centered
+                confirmLoading={updating}
+                okText='Save ISP'
+            >
+                <Form
+                    layout='vertical'
+                    onFinish={handleUpdate}
+                >
+                    <Spin spinning={updating}>
+                        <Form.Item
+                            label='Name'
+                            required
+                        >
+                            <Input
+                                name='name'
+                                value={name}
+                                onChange={handleInputChange}
+                                placeholder='ISP name'
+                                prefix={<HiOutlineOfficeBuilding />}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            label='Address'
+                            required
+                        >
+                            <Input
+                                prefix={<CiLocationOn />}
+                                name='address'
+                                value={address}
+                                onChange={handleInputChange}
+                                placeholder='ISP address'
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            label='Code'
+                            required
+                        >
+                            <Input
+                                prefix={<BorderlessTableOutlined />}
+                                name='code'
+                                type='number'
+                                min={0}
+                                value={code}
+                                onChange={handleInputChange}
+                                placeholder='ISP Code'
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            label='Contact Info'
+                        >
+                            <Input
+                                prefix={<UserOutlined />}
+                                name='contactInfo'
+                                value={contactInfo}
+                                onChange={handleInputChange}
+                                placeholder='ISP contact info/user'
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            label='Phone Numbers'
+                            required
+                        >
+                            {phoneNumbers.map((phone: PhoneNumber, index: number) => (
+                                <Space
+                                    key={phone.key}
+                                    style={{ display: 'flex', marginBottom: 8 }}
+                                    align="baseline"
+                                >
+                                    <Input
+                                        value={phone.number}
+                                        onChange={(e: any) => onChangeNumber(e.target.value, index)}
+                                        prefix={<PhoneOutlined />}
+                                        placeholder='+000 / 00-000-000'
+                                    />
+
+                                    {phoneNumbers.length > 1 ? (
+                                        <MinusCircleOutlined
+                                            className="dynamic-delete-button"
+                                            onClick={() => onRemovePhone(phone.key)}
+                                        />
+                                    ) : null}
+                                </Space>
+                            ))}
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button type="dashed" onClick={onAddPhone} block icon={<PlusOutlined />}>
+                                Add Phone Number
+                            </Button>
+                        </Form.Item>
+                    </Spin>
+                </Form>
+            </Modal>
+        </>
+    )
+}
+
+export default UpdateIsp

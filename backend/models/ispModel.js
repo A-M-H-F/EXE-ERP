@@ -7,21 +7,36 @@ const ispSchema = mongoose.Schema(
             unique: true,
             required: true
         },
+        code: {
+            type: Number,
+            unique: true, 
+        },
         address: {
+            type: String,
+            unique: true
+        },
+        contactInfo: {
             type: String,
             unique: true
         },
         phoneNumbers: [
             {
-                type: String,
-                unique: true
+                type: String
             }
         ],
         status: {
             type: String,
             enum: ['active', 'inactive'],
             default: 'active'
-        }
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
     },
     {
         timestamps: true,

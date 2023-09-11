@@ -98,8 +98,8 @@ const updateRole = asyncHandler(async (req, res) => {
 // @access  Private - authMiddleware
 const getAllRoles = asyncHandler(async (req, res) => {
     const roles = await Role.find()
-    .select('name')
-    .lean();
+        .select('name createdAt updatedAt')
+        .lean();
 
     if (roles) {
         res.status(200).json(roles);
@@ -113,7 +113,9 @@ const getAllRoles = asyncHandler(async (req, res) => {
 // @route   GET /role/:id
 // @access  Private - authMiddleware
 const getSpecificRole = asyncHandler(async (req, res) => {
-    const role = await Role.findById(req.params.id).lean();
+    const role = await Role.findById(req.params.id)
+        .select('-__v')
+        .lean();
 
     if (role) {
         res.status(200).json(role);
@@ -140,7 +142,7 @@ const removeRole = asyncHandler(async (req, res) => {
         }
     );
 
-    if (checkUserRoles) {
+    if (checkUserRoles.length > 0) {
         const total = checkUserRoles.length;
         res.status(400);
         throw new Error(`Please change users roles first, you have ${total} users that have this role assigned to`);
@@ -148,8 +150,12 @@ const removeRole = asyncHandler(async (req, res) => {
 
     const remove = await Role.findByIdAndDelete(isExists._id);
 
-    if (remove) {
-        res.status(200).json({ message: 'Role removed successfully' });
+    const newRolesList = await Role.find()
+        .select('name createdAt updatedAt')
+        .lean();
+
+    if (remove && newRolesList) {
+        res.status(200).json({ message: 'Role removed successfully', newRolesList });
     } else {
         res.status(400);
         throw new Error('Error removing role');

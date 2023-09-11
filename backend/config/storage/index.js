@@ -14,10 +14,24 @@ const profilePictureStorage = multer.diskStorage({
         cb(null, fileName);
     }
 });
+
+// update user profile pic admin
+const userProfilePictureStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const userId = req.params.id; // get the user ID from the request user
+        const dirPath = `public/images/user/${userId}/profile`; // construct the directory path
+        fs.mkdirSync(dirPath, { recursive: true }); // create the directory if it doesn't exist
+        cb(null, dirPath); // set the directory path as the destination
+    },
+    filename: function (req, file, cb) {
+        const fileName = Date.now() + '-' + file.originalname; // generate a unique file name
+        cb(null, fileName);
+    }
+});
 const profilePictureFilter = function (req, file, cb) {
     // Accept only .webp files
-    if (!file.originalname.match(/\.(webp|jpeg|jpg)$/)) {
-        const error = new Error('Only .webp, .jpeg and .jpg files are allowed!');
+    if (!file.originalname.match(/\.(webp|jpeg|jpg|png)$/)) {
+        const error = new Error('Only .webp, .jpeg, .png and .jpg files are allowed!');
         return cb(error, false);
     }
 
@@ -58,11 +72,13 @@ const multipleFileFilter = function (req, file, cb) {
 };
 
 const uploadProfilePictureStorage = multer({ storage: profilePictureStorage, fileFilter: profilePictureFilter });
+const uploadUserProfilePicStorage = multer({ storage: userProfilePictureStorage, fileFilter: profilePictureFilter });
 
 const uploadMultipleImage = multer({ storage: toBeEditedStorage, fileFilter: multipleFileFilter })
     .array('images', 6);
 
 module.exports = {
     uploadProfilePictureStorage,
+    uploadUserProfilePicStorage,
     uploadMultipleImage
 }

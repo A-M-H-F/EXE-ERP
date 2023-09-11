@@ -25,7 +25,18 @@ const addressSchema = mongoose.Schema(
             type: String,
             enum: ['active', 'inactive'],
             default: 'active'
-        }
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+    },
+    {
+        timestamps: true,
     }
 )
 

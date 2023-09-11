@@ -67,6 +67,7 @@ const getAccessToken = asyncHandler(async (req, res) => {
     // Done
     try {
         const rf_token = req.cookies.extreme_refresh;
+
         if (!rf_token) {
             res.status(401);
             throw new Error('Please login now')

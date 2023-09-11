@@ -12,7 +12,7 @@ const corsOptionsWeb = {
                 isAllowed = true;
             }
         });
-        if (isAllowed || !origin) {
+        if (isAllowed || !origin) { // (isAllowed || !origin)
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));

@@ -158,14 +158,14 @@ const updateBoardsPosition = asyncHandler(async (req, res) => {
     }
 })
 
-// @desc    Add user to board
-// @route   PUT /boards/user/add/:id
+// @desc    Update board users
+// @route   PUT /boards/user/update/:id
 // @access  Private - authMiddleware
-const addUserToBoard = asyncHandler(async (req, res) => {
-    const { user } = req.body;
+const updateBoardUsers = asyncHandler(async (req, res) => {
+    const { users } = req.body;
     const userId = req.user.id;
 
-    if (!user) {
+    if (!users) {
         res.status(400);
         throw new Error('Please check the user');
     }
@@ -184,10 +184,8 @@ const addUserToBoard = asyncHandler(async (req, res) => {
     const result = await Board.findByIdAndUpdate(
         req.params.id,
         {
-            $push: {
-                users: {
-                    user: user
-                }
+            $set: {
+                users: users
             }
         },
         {
@@ -202,65 +200,12 @@ const addUserToBoard = asyncHandler(async (req, res) => {
 
     if (result) {
         res.status(200).json({
-            message: "User added to board successfully",
+            message: "Board users updated successfully",
             newBoardInfo: result
         });
     } else {
         res.status(400);
-        throw new Error('Error adding user to board');
-    }
-})
-
-// @desc    Remove user from board
-// @route   PUT /boards/user/remove/:id
-// @access  Private - authMiddleware
-const removeUserFromBoard = asyncHandler(async (req, res) => {
-    const { user } = req.body;
-    const userId = req.user.id;
-
-    if (!user) {
-        res.status(400);
-        throw new Error('Please check the user');
-    }
-
-    const isExists = await Board.findById(req.params.id);
-    if (!isExists) {
-        res.status(400);
-        throw new Error('Board not found');
-    }
-
-    if (String(isExists.creator) !== String(userId)) {
-        res.status(400);
-        throw new Error('Error, not the creator');
-    }
-
-    const result = await Board.findByIdAndUpdate(
-        req.params.id,
-        {
-            $pull: {
-                users: {
-                    user: user
-                }
-            }
-        },
-        {
-            new: true
-        }
-    ).select('-__v -createdAt -updatedAt -users.position -users.favorite -users.favoritePosition -users._id')
-        .populate({
-            path: 'users.user',
-            select: 'name picture'
-        })
-        .lean();
-
-    if (result) {
-        res.status(200).json({
-            message: "User removed from board successfully",
-            newBoardInfo: result
-        });
-    } else {
-        res.status(400);
-        throw new Error('Error removing user from board');
+        throw new Error('Error board users');
     }
 })
 
@@ -663,6 +608,5 @@ module.exports = {
     updateBoardDescription,
     updateBoardIcon,
     deleteBoard,
-    addUserToBoard,
-    removeUserFromBoard
+    updateBoardUsers
 }

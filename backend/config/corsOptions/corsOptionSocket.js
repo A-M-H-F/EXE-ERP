@@ -13,7 +13,7 @@ const corsOptionsSocket = {
                     isAllowed = true;
                 }
             });
-            if (isAllowed || !origin) { // (isAllowed || !origin)
+            if (isAllowed) { // (isAllowed || !origin)
                 callback(null, true);
             } else {
                 callback(new Error('Not allowed by CORS'));

@@ -5,7 +5,7 @@ const {
     addNewInternetService,
     updateInternetService,
     updateInternetServiceStatus,
-    getInActiveInternetServices,
+    updateInternetServiceISP,
     getActiveInternetServices
 } = require('../../controllers/internetService');
 const auth = require('../../middleware/auth');
@@ -17,15 +17,10 @@ const auth = require('../../middleware/auth');
 // @access  Private - authMiddleware
 router.get('/', auth, getAllInternetServices);
 
-// @desc    Get active internet services
+// @desc    Get All active internet services
 // @route   GET /internet-service/active
 // @access  Private - authMiddleware
 router.get('/active', auth, getActiveInternetServices);
-
-// @desc    Get inactive internet services
-// @route   GET /internet-service/inactive
-// @access  Private - authMiddleware
-router.get('/inactive', auth, getInActiveInternetServices);
 
 // @desc    Get specific internet service
 // @route   GET /internet-service/:id
@@ -46,5 +41,10 @@ router.put('/:id', auth, updateInternetService);
 // @route   PUT /internet-service/status/:id
 // @access  Private - authMiddleware
 router.put('/status/:id', auth, updateInternetServiceStatus);
+
+// @desc    Update internet service isp
+// @route   PUT /internet-service/isp/:id
+// @access  Private - authMiddleware
+router.put('/isp/:id', auth, updateInternetServiceISP);
 
 module.exports = router

@@ -14,11 +14,34 @@ const getAllSections = asyncHandler(async (req, res) => {
         throw new Error('Board not found');
     }
 
-    const result = await Section.find({ board: req.params.id })
+    const result = await Section.find({ board: req.params.id }).sort({ position: 1 }).lean()
         .select('title board')
         .lean();
 
-    if (result) {
+    const getTasks = await Promise.all(result.map(async (section) => {
+        const tasks = await Task.find({ section: section._id })
+            .sort({ position: 1 })
+            .populate({
+                path: 'moveHistory.movedBy',
+                select: 'name _id'
+            })
+            .populate({
+                path: 'creator',
+                select: 'name _id'
+            })
+            .populate({
+                path: 'updatedBy',
+                select: 'name _id'
+            })
+            .populate({
+                path: 'editHistory.editedBy',
+                select: 'name _id'
+            })
+            .lean()
+        section.tasks = tasks
+    }))
+
+    if (result && getTasks) {
         res.status(200).json(result);
     } else {
         res.status(400);
@@ -51,14 +74,17 @@ const createSection = asyncHandler(async (req, res) => {
         board: boardId
     })
 
-    const newSections = await Section.find({ board: boardId })
-        .select('title board')
-        .lean();
+    if (result) {
+        const section = {
+            _id: String(result._id),
+            title: result.title,
+            board: String(result.board),
+            tasks: []
+        }
 
-    if (result && newSections) {
         res.status(200).json({
             message: 'Section added successfully',
-            newSections
+            section
         });
     } else {
         res.status(400);
@@ -96,14 +122,13 @@ const updateSectionTitle = asyncHandler(async (req, res) => {
 
     if (result) {
         res.status(200).json({
-            message: 'Title updated successfully',
+            message: 'Title updated successfully'
         });
     } else {
         res.status(400);
         throw new Error('Error updating title');
     }
 })
-
 
 // @desc    Delete section
 // @route   DELETE /boards/sections/:id
@@ -128,14 +153,9 @@ const deleteSection = asyncHandler(async (req, res) => {
     const deleteTasks = await Task.deleteMany({ section: sectionId });
     const result = await Section.findByIdAndDelete(sectionId);
 
-    const newSections = await Section.find({ board: isSectionExists.board })
-        .select('title board')
-        .lean();
-
     if (deleteTasks && result) {
         res.status(200).json({
-            message: 'Section deleted successfully',
-            newSections
+            message: 'Section deleted successfully'
         })
     } else {
         res.status(400);

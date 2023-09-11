@@ -6,7 +6,15 @@ const InternetService = require('../../models/internetServiceModel');
 // @route   GET /isp
 // @access  Private - authMiddleware
 const getAllIsp = asyncHandler(async (req, res) => {
-    const isps = await ISP.find().lean();
+    const isps = await ISP.find()
+        .select('-__v')
+        .populate(
+            {
+                path: 'createdBy updatedBy',
+                select: 'name'
+            }
+        )
+        .lean();
 
     if (isps) {
         res.status(200).json(isps);
@@ -20,7 +28,15 @@ const getAllIsp = asyncHandler(async (req, res) => {
 // @route   GET /isp/:id
 // @access  Private - authMiddleware
 const getSpecificIsp = asyncHandler(async (req, res) => {
-    const isp = await ISP.findById(req.params.id).lean();
+    const isp = await ISP.findById(req.params.id)
+        .select('-__v')
+        .populate(
+            {
+                path: 'createdBy updatedBy',
+                select: 'name'
+            }
+        )
+        .lean();
 
     if (isp) {
         res.status(200).json(isp);
@@ -34,37 +50,57 @@ const getSpecificIsp = asyncHandler(async (req, res) => {
 // @route   POST /isp
 // @access  Private - authMiddleware
 const addNewIsp = asyncHandler(async (req, res) => {
-    const { name, address, phoneNumbers } = req.body;
+    const { name, address, phoneNumbers, contactInfo, code } = req.body;
 
-    if (!name || !address || !phoneNumbers) {
+    if (!name || !address || !phoneNumbers || !code) {
         res.status(400);
         throw new Error('Please check all fields');
     }
 
-    if (typeof phoneNumbers !== 'array' || phoneNumbers.length <= 0) {
+    if (!phoneNumbers || phoneNumbers.length <= 0) {
         res.status(400);
-        throw new Error('Please check all fields');
+        throw new Error('Please add at lease 1 phone number');
     }
 
     const checkIsp = await ISP.findOne(
-        { name }
+        {
+            $or: [
+                { name },
+                { address },
+                { contactInfo },
+                { code }
+            ]
+        }
     );
 
     if (checkIsp) {
         res.status(400);
-        throw new Error('Please choose a new name');
+        throw new Error('Please choose a unique name/address/contact Info/code');
     }
 
     const newIsp = await ISP.create(
         {
             name,
+            code,
             address,
-            phoneNumbers
+            phoneNumbers,
+            contactInfo,
+            createdBy: req.user.id
         }
     )
 
-    if (newIsp) {
-        res.status(200).json({ message: 'New ISP added successfully' });
+    const result = await ISP.findById(newIsp._id)
+        .select('-__v')
+        .populate(
+            {
+                path: 'createdBy updatedBy',
+                select: 'name'
+            }
+        )
+        .lean();
+
+    if (newIsp && result) {
+        res.status(200).json({ message: 'New ISP added successfully', result });
     } else {
         res.status(400);
         throw new Error('Error adding new ISP');
@@ -75,9 +111,9 @@ const addNewIsp = asyncHandler(async (req, res) => {
 // @route   PUT /isp/:id
 // @access  Private - authMiddleware
 const updateIsp = asyncHandler(async (req, res) => {
-    const { name, address, phoneNumbers } = req.body;
+    const { name, address, phoneNumbers, contactInfo, code } = req.body;
 
-    if (!name || !address || !phoneNumbers) {
+    if (!name || !address || !phoneNumbers || !code) {
         res.status(400);
         throw new Error('Please check all fields');
     }
@@ -94,29 +130,45 @@ const updateIsp = asyncHandler(async (req, res) => {
             _id: { $ne: req.params.id },
             $or: [
                 { name },
-                { address }
+                { address },
+                { contactInfo },
+                { code }
             ]
         }
     );
 
     if (findExists) {
         res.status(400);
-        throw new Error('Please choose different name or address');
+        throw new Error('Please choose different name/address/contact info/code');
     }
 
-    const upISP = await ISP.findByIdAndUpdate(
+    const result = await ISP.findByIdAndUpdate(
         isExists._id,
         {
             $set: {
                 name,
+                code,
                 address,
-                phoneNumbers
+                phoneNumbers,
+                contactInfo,
+                updatedBy: req.user.id
             }
+        },
+        {
+            new: true
         }
-    );
+    )
+        .select('-__v')
+        .populate(
+            {
+                path: 'createdBy updatedBy',
+                select: 'name'
+            }
+        )
+        .lean();
 
-    if (upISP) {
-        res.status(200).json({ message: 'ISP updated Successfully' });
+    if (result) {
+        res.status(200).json({ message: 'ISP updated Successfully', updated: result });
     } else {
         res.status(400);
         throw new Error('Error updating ISP');
@@ -127,7 +179,7 @@ const updateIsp = asyncHandler(async (req, res) => {
 // @route   PUT /isp/status/:id
 // @access  Private - authMiddleware
 const updateIspStatus = asyncHandler(async (req, res) => {
-    const isExists = await ISP.findById(req.param.id).lean();
+    const isExists = await ISP.findById(req.params.id).lean();
 
     if (!isExists) {
         res.status(400);
@@ -140,7 +192,8 @@ const updateIspStatus = asyncHandler(async (req, res) => {
         req.params.id,
         {
             $set: {
-                status: statusCondition
+                status: statusCondition,
+                updatedBy: req.user.id
             }
         }
     );
@@ -172,8 +225,10 @@ const removeISP = asyncHandler(async (req, res) => {
 
     if (checkIsExists) {
         const total = checkIsExists.length;
-        res.status(400);
-        throw new Error(`Please remove this ISP from the ${total} Internet services, and try again`)
+        if (total > 0) {
+            res.status(400);
+            throw new Error(`Please remove this ISP from the ${total} Internet services, and try again`)
+        }
     }
 
     const remove = await ISP.findByIdAndDelete(isExists._id);

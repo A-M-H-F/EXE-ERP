@@ -7,7 +7,12 @@ const InternetService = require('../../models/internetServiceModel');
 // @access  Private - authMiddleware
 const getAllInternetServices = asyncHandler(async (req, res) => {
     const result = await InternetService.find()
-        .populate('isp')
+        .populate(
+            {
+                path: 'createdBy updatedBy isp',
+                select: 'name'
+            }
+        )
         .lean();
 
     if (result) {
@@ -18,28 +23,12 @@ const getAllInternetServices = asyncHandler(async (req, res) => {
     }
 })
 
-// @desc    Get active internet services
+// @desc    Get All active internet services
 // @route   GET /internet-service/active
 // @access  Private - authMiddleware
 const getActiveInternetServices = asyncHandler(async (req, res) => {
     const result = await InternetService.find({ status: 'active' })
-        .populate('isp')
-        .lean();
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400);
-        throw new Error('Error getting Internet Services');
-    }
-})
-
-// @desc    Get inactive internet services
-// @route   GET /internet-service/inactive
-// @access  Private - authMiddleware
-const getInActiveInternetServices = asyncHandler(async (req, res) => {
-    const result = await InternetService.find({ status: 'inactive' })
-        .populate('isp')
+        .select('service')
         .lean();
 
     if (result) {
@@ -55,7 +44,12 @@ const getInActiveInternetServices = asyncHandler(async (req, res) => {
 // @access  Private - authMiddleware
 const getSpecificIS = asyncHandler(async (req, res) => {
     const result = await InternetService.findById(req.params.id)
-        .populate('isp')
+        .populate(
+            {
+                path: 'createdBy updatedBy isp',
+                select: 'name'
+            }
+        )
         .lean();
 
     if (result) {
@@ -76,13 +70,17 @@ const addNewInternetService = asyncHandler(async (req, res) => {
         service,
         cost,
         price,
-        status,
         moreInfo
     } = req.body;
 
     if (!name || !isp || !service || !cost || !price) {
         res.status(400);
         throw new Error('Please check all fields');
+    }
+
+    if (price < cost) {
+        res.status(400)
+        throw new Error('Price should be greater/equal to the cost');
     }
 
     const checkISP = await ISP.findById(isp);
@@ -107,12 +105,22 @@ const addNewInternetService = asyncHandler(async (req, res) => {
         service,
         price,
         cost,
-        status,
-        moreInfo
-    });
+        moreInfo,
+        createdBy: req.user.id,
+        profit: price - cost,
+    })
+
+    const newInternetService = await InternetService.findById(newIS._id)
+        .populate(
+            {
+                path: 'createdBy updatedBy isp',
+                select: 'name'
+            }
+        )
+        .lean();
 
     if (newIS) {
-        res.status(200).json({ message: 'New internet service added successfully' });
+        res.status(200).json({ message: 'New internet service added successfully', newInternetService });
     } else {
         res.status(400);
         throw new Error('Error adding new internet service');
@@ -137,6 +145,11 @@ const updateInternetService = asyncHandler(async (req, res) => {
         throw new Error('Please check all fields');
     }
 
+    if (price < cost) {
+        res.status(400)
+        throw new Error('Price should be greater/equal to the cost');
+    }
+
     const isExists = await InternetService.findById(req.params.id);
     if (!isExists) {
         res.status(400);
@@ -153,7 +166,7 @@ const updateInternetService = asyncHandler(async (req, res) => {
     const checkUnique = await InternetService.findOne(
         {
             _id: { $ne: req.params.id },
-            service
+            service: service
         }
     );
     if (checkUnique) {
@@ -170,20 +183,31 @@ const updateInternetService = asyncHandler(async (req, res) => {
                 service,
                 cost,
                 price,
-                moreInfo
+                moreInfo,
+                updatedBy: req.user.id,
+                profit: price - cost,
             }
+        },
+        {
+            new: true
         }
-    );
+    ).populate(
+        {
+            path: 'createdBy updatedBy isp',
+            select: 'name'
+        }
+    )
+        .lean();
 
     if (update) {
-        res.status(200).json({ message: 'Internet Service updated successfully' });
+        res.status(200).json({ message: 'Internet Service updated successfully', newInternetService: update });
     } else {
         res.status(400);
         throw new Error('Error updating internet service');
     }
 })
 
-// @desc    Update  internet service
+// @desc    Update internet service status
 // @route   PUT /internet-service/status/:id
 // @access  Private - authMiddleware
 const updateInternetServiceStatus = asyncHandler(async (req, res) => {
@@ -206,19 +230,65 @@ const updateInternetServiceStatus = asyncHandler(async (req, res) => {
     );
 
     if (updateStatus) {
-        res.status(200).json({ message: `Internet service status updated to ${statusCondition}` });
+        res.status(200).json({
+            message: `Internet service status updated to ${statusCondition}`,
+        });
     } else {
         res.status(400);
         throw new Error('Error updating internet service status');
     }
 })
 
+// @desc    Update internet service isp
+// @route   PUT /internet-service/isp/:id
+// @access  Private - authMiddleware
+const updateInternetServiceISP = asyncHandler(async (req, res) => {
+    const { isp } = req.body
+
+    if (!isp) {
+        res.status(400);
+        throw new Error('Please select isp');
+    }
+
+    const checkISP = await ISP.findById(isp);
+    if (!checkISP) {
+        res.status(400);
+        throw new Error('ISP not found');
+    }
+
+
+    const isExists = await InternetService.findById(req.params.id);
+
+    if (!isExists) {
+        res.status(400);
+        throw new Error('Internet service not found');
+    }
+
+    const result = await InternetService.findByIdAndUpdate(
+        req.params.id,
+        {
+            $set: {
+                isp: isp
+            }
+        }
+    );
+
+    if (result) {
+        res.status(200).json({
+            message: `Internet service isp updated successfully`,
+        });
+    } else {
+        res.status(400);
+        throw new Error('Error updating internet service isp');
+    }
+})
+
 module.exports = {
     getAllInternetServices,
+    getActiveInternetServices,
     getSpecificIS,
     addNewInternetService,
     updateInternetService,
     updateInternetServiceStatus,
-    getActiveInternetServices,
-    getInActiveInternetServices
+    updateInternetServiceISP,
 }

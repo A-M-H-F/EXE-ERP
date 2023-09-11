@@ -4,23 +4,21 @@ const User = require('../models/userModel');
 const authSocket = async (socket, next) => {
     let token;
 
-    if (socket.handshake.headers.authorization) {
-        token = socket.handshake.headers.authorization;
+    if (socket.handshake.auth.token) {
+        token = socket.handshake.auth.token;
+        console.log(token)
 
         try {
             // Verify the token using jwt.verify
-            const decoded = jwt.verify(token, process.env.ADMIN_ACCESS_TOKEN_SECRET);
+            // const decoded = jwt.verify(token, process.env.ADMIN_ACCESS_TOKEN_SECRET);
+            jwt.verify(token, process.env.ADMIN_ACCESS_TOKEN_SECRET);
 
-            const user = await User.findById(decoded.id).select('-password');
+            // const user = await User.findById(decoded.id).select('-password');
 
-            // check user role
-            // if (user.role !== 'Admin')
-            //     throw new Error('Admin resources access denied')
+            // socket.user = user;
 
-            socket.user = user;
-
-            // Add the decoded token to the socket object
-            socket.decoded = decoded;
+            // // Add the decoded token to the socket object
+            // socket.decoded = decoded;
 
             next();
         } catch (error) {

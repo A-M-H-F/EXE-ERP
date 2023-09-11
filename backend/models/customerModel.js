@@ -7,9 +7,24 @@ const customerSchema = mongoose.Schema(
             unique: true,
             required: true
         },
+        service: { // = service - _id
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'InternetService'
+        },
+        accountName: {
+            type: String,
+        },
+        arabicName: {
+            type: String,
+            unique: true,
+            required: true
+        },
         phoneNumber: {
             type: String,
             required: true
+        },
+        moreInfo: {
+            type: String
         },
         additionalPhoneNumbers: [
             {
@@ -36,12 +51,19 @@ const customerSchema = mongoose.Schema(
                 type: String
             },
             buildingImage: { // to be add for the routes
-                type: String
+                type: String,
+                default: ''
             },
         },
         coordinates: {
-            type: String,
-            unique: true
+            latitude: {
+                type: String,
+                // unique: true,
+            },
+            longitude: {
+                type: String,
+                // unique: true,
+            }
         },
         macAddress: {
             type: String,
@@ -58,7 +80,15 @@ const customerSchema = mongoose.Schema(
             type: String,
             enum: ['active', 'inactive'],
             default: 'active'
-        }
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
     },
     {
         timestamps: true,

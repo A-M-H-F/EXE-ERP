@@ -17,7 +17,51 @@ const scrumBoardSectionTaskSchema = mongoose.Schema(
         },
         position: {
             type: Number
-        }
+        },
+        creator: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        moveHistory: [
+            {
+                from: {
+                    type: String,
+                },
+                to: {
+                    type: String,
+                },
+                movedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User'
+                },
+                date: {
+                    type: Date,
+                    default: new Date(),
+                },
+            }
+        ],
+        editHistory: [
+            {
+                title: {
+                    type: String,
+                },
+                content: {
+                    type: String,
+                },
+                editedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User'
+                },
+                date: {
+                    type: Date,
+                    default: new Date(),
+                },
+            }
+        ]
     },
     {
         timestamps: true,

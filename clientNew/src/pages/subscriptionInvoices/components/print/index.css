@@ -1,0 +1,9 @@
+.print-only {
+  display: none; /* Hide by default for screen display */
+}
+
+@media print {
+  .print-only {
+    display: block; /* Show when printing */
+  }
+}

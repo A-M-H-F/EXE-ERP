@@ -1,19 +1,41 @@
 const asyncHandler = require('express-async-handler');
 const SubscriptionInvoice = require('../../models/subscriptionInvoiceModel');
-const Subscription = require('../../models/subscriptionModel');
 const Customer = require('../../models/customerModel');
-const User = require('../../models/userModel');
 const InternetService = require('../../models/internetServiceModel');
-const moment = require('moment');
-
-// populate: customer/service/printedBy/collector
 
 // @desc    Get All Subscription Invoices
 // @route   GET /subscription-invoice
 // @access  Private - authMiddleware
 const getAllSubscriptionInvoices = asyncHandler(async (req, res) => {
-    const result = await SubscriptionInvoice.find()
-        .populate('customer service printedBy collector')
+    const { start, end, fieldType } = req.query;
+
+    if (!start || !end) {
+        res.status(400);
+        throw new Error('Error, try again');
+    }
+
+    const option = fieldType === 'Invoice Date' ? 'invoiceDate' : fieldType === 'Payment Date' ? 'paymentDate' : 'createdAt'
+    const query = {};
+    query[option] = { $gte: start, $lte: end };
+
+    const result = await SubscriptionInvoice.find(query).sort({ [option]: -1 })
+        .select('-__v -printHistory')
+        .populate({
+            path: 'customer',
+            select: 'fullName accountName arabicName phoneNumber address.city address.zone address.street',
+        })
+        .populate({
+            path: 'printedBy collector createdBy',
+            select: 'name'
+        })
+        .populate({
+            path: 'service.ref',
+            select: 'isp',
+            populate: {
+                path: 'isp',
+                select: 'code'
+            }
+        })
         .lean();
 
     if (result) {
@@ -34,7 +56,48 @@ const getSpecificSubscriptionInvoice = asyncHandler(async (req, res) => {
     }
 
     const result = await SubscriptionInvoice.findById(req.params.id)
-        .populate('customer service printedBy collector')
+        .select('-__v -printHistory')
+        .populate({
+            path: 'customer',
+            select: 'fullName accountName arabicName phoneNumber address.city address.zone address.street',
+        })
+        .populate({
+            path: 'printedBy collector createdBy',
+            select: 'name'
+        })
+        .populate({
+            path: 'service.ref',
+            select: 'isp',
+            populate: {
+                path: 'isp',
+                select: 'code'
+            }
+        })
+        .lean();
+
+    if (result) {
+        res.status(200).json(result);
+    } else {
+        res.status(400);
+        throw new Error('Subscription invoice not found');
+    }
+})
+
+// @desc    Get Subscription Invoice print history
+// @route   GET /subscription-invoice/history/:id
+// @access  Private - authMiddleware
+const getSubscriptionInvoicePrintHistory = asyncHandler(async (req, res) => {
+    if (!req.params.id) {
+        req.status(400);
+        throw new Error('Error, try again');
+    }
+
+    const result = await SubscriptionInvoice.findById(req.params.id)
+        .select('printHistory')
+        .populate({
+            path: 'printHistory.printedBy',
+            select: 'name'
+        })
         .lean();
 
     if (result) {
@@ -54,8 +117,18 @@ const getCustomerSubscriptionInvoices = asyncHandler(async (req, res) => {
         throw new Error('Error, try again');
     }
 
-    const isCustomerExists = await Customer.findById(req.params.id);
+    const { start, end, fieldType } = req.query;
 
+    if (!start || !end) {
+        res.status(400);
+        throw new Error('Error, try again');
+    }
+
+    const option = fieldType === 'Invoice Date' ? 'invoiceDate' : fieldType === 'Payment Date' ? 'paymentDate' : 'createdAt'
+    const query = {};
+    query[option] = { $gte: start, $lte: end };
+
+    const isCustomerExists = await Customer.findById(req.params.id);
     if (!isCustomerExists) {
         res.status(400);
         throw new Error('Customer not found');
@@ -63,10 +136,28 @@ const getCustomerSubscriptionInvoices = asyncHandler(async (req, res) => {
 
     const result = await SubscriptionInvoice.find(
         {
-            customer: req.params.id
+            customer: req.params.id,
+            ...query
         }
     )
-        .populate('service printedBy collector').lean();
+        .select('-__v')
+        .populate({
+            path: 'customer',
+            select: 'fullName accountName arabicName phoneNumber address.city address.zone address.street',
+        })
+        .populate({
+            path: 'printedBy collector createdBy',
+            select: 'name'
+        })
+        .populate({
+            path: 'service.ref',
+            select: 'isp',
+            populate: {
+                path: 'isp',
+                select: 'code'
+            }
+        })
+        .lean();
 
     if (result) {
         res.status(200).json(result);
@@ -76,234 +167,26 @@ const getCustomerSubscriptionInvoices = asyncHandler(async (req, res) => {
     }
 })
 
-// @desc    Get Internet service subscription invoices
-// @route   GET /subscription-invoice/internet-service/:id
-// @access  Private - authMiddleware
-const getSubscriptionInvoicesByIS = asyncHandler(async (req, res) => {
-    if (!req.params.id) {
-        req.status(400);
-        throw new Error('Error, try again');
-    }
-
-    const isInternetServiceExists = await InternetService.findById(req.params.id);
-
-    if (!isInternetServiceExists) {
-        res.status(400);
-        throw new Error('Internet service not found');
-    }
-
-    const result = await SubscriptionInvoice.find(
-        {
-            service: isInternetServiceExists._id
-        }
-    )
-        .populate('customer printedBy collector')
-        .lean();
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400);
-        throw new Error('Error getting subscription invoices by internet service');
-    }
-})
-
-// @desc    Get subscription invoice by qrCode
-// @route   GET /subscription-invoice/qr-code
-// @access  Private - authMiddleware
-const getSubscriptionInvoiceByQrCode = asyncHandler(async (req, res) => { // to be modified
-    const { qrCode } = req.body;
-
-    const result = await SubscriptionInvoice.findOne(
-        {
-            qrCode
-        }
-    )
-        .populate('customer service printedBy collector')
-        .lean();
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400);
-        throw new Error('Error getting subscription invoice by qrCode');
-    }
-})
-
-// @desc    Get subscription invoices by paymentStatus (paid-unpaid)
-// @route   GET /subscription-invoice/status/:id
-// @access  Private - authMiddleware
-const getSubscriptionInvoicesByPaymentStatus = asyncHandler(async (req, res) => {
-    if (!req.params.id || !['paid', 'unpaid'].includes(req.params.id)) {
-        res.status(400);
-        throw new Error('Please try again');
-    }
-
-    const result = await SubscriptionInvoice.find(
-        {
-            paymentStatus: req.params.id
-        }
-    )
-        .populate('customer service printedBy collector')
-        .lean();
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400);
-        throw new Error('Error getting subscription invoices by payment status');
-    }
-})
-
-// @desc    Get subscription invoices for this month
-// @route   GET /subscription-invoice/month
-// @access  Private - authMiddleware
-const getSubscriptionInvoiceForCurrentMonth = asyncHandler(async (req, res) => {
-    const now = moment();
-    const start = now.startOf('month').toDate();
-    const end = now.endOf('month').toDate();
-  
-    const result = await SubscriptionInvoice.find({
-      invoiceDate: { $gte: start, $lte: end }
-    })
-      .populate('customer service printedBy collector')
-      .lean();
-  
-    if (result) {
-      res.status(200).json(result);
-    } else {
-      res.status(400);
-      throw new Error('Error getting subscription invoices for current month');
-    }
-  });
-
-// @desc    Get subscription invoices for a specific range of date
-// @route   GET /subscription-invoice/date
-// @access  Private - authMiddleware
-const getSubscriptionInvoiceByRangeOfDate = asyncHandler(async (req, res) => {
-    const { start, end } = req.body;
-
-    if (!start || !end) {
-        res.status(400);
-        throw new Error('Error, try again');
-    }
-
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-
-    const result = await SubscriptionInvoice.find({
-        invoiceDate: { $gte: startDate, $lte: endDate }
-    })
-        .populate('customer service printedBy collector')
-        .lean();
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400);
-        throw new Error('Error getting subscription invoice by range of date');
-    }
-})
-
-// @desc    Get subscription invoices by collector
-// @route   GET /subscription-invoice/collector/:id
-// @access  Private - authMiddleware
-const getSubscriptionInvoiceByCollector = asyncHandler(async (req, res) => {
-    if (!req.params.id) {
-        req.status(400);
-        throw new Error('Error, try again');
-    }
-
-    const isExists = await User.findById(req.params.id);
-    if (!isExists) {
-        res.status(400);
-        throw new Error('User not found');
-    }
-
-    const result = await SubscriptionInvoice.find(
-        {
-            collector: isExists._id
-        }
-    )
-        .populate('customer service printedBy')
-        .lean();
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400);
-        throw new Error('Error getting subscription invoices by collector');
-    }
-})
-
-// @desc    Get subscription invoices printedBy a user
-// @route   GET /subscription-invoice/printed-by/:id
-// @access  Private - authMiddleware
-const getSubscriptionInvoicePrintedBy = asyncHandler(async (req, res) => {
-    if (!req.params.id) {
-        res.status(400);
-        throw new Error('Error, try again');
-    }
-
-    const isExists = await User.findById(req.params.id);
-    if (!isExists) {
-        res.status(400);
-        throw new Error('User not found');
-    }
-
-    const result = await SubscriptionInvoice.find(
-        {
-            printedBy: req.params.id
-        }
-    )
-        .populate('customer service collector')
-        .lean();
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400);
-        throw new Error('Error getting subscription invoices by user');
-    }
-})
-
-// @desc    Get subscription invoice by serialNumber
-// @route   GET /subscription-invoice/serial/:id
-// @access  Private - authMiddleware
-const getSubscriptionInvoiceBySerialNumber = asyncHandler(async (req, res) => {
-    if (!req.params.id) {
-        res.status(400);
-        throw new Error('Error, try again');
-    }
-
-    const result = await SubscriptionInvoice.findOne(
-        {
-            serialNumber: req.params.id
-        }
-    )
-        .populate('customer service printedBy collector')
-        .lean();
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400);
-        throw new Error('Error getting subscription invoice by serial number');
-    }
-})
-
 // @desc    Add new subscription invoice
 // @route   POST /subscription-invoice
 // @access  Private - authMiddleware
 const addNewSubscriptionInvoice = asyncHandler(async (req, res) => {
     const {
         customer,
-        service
+        invoiceMonth,
+        paymentStatus,
+        paymentDate,
+        invoiceDate
     } = req.body;
 
-    if (!customer || !service) {
+    if (!customer || !paymentStatus || !invoiceMonth) {
         res.status(400);
         throw new Error('Please check all fields');
+    }
+
+    if (paymentStatus === 'paid' && !paymentDate) {
+        res.status(400);
+        throw new Error('Please add a payment date');
     }
 
     const isCustomerExists = await Customer.findById(customer);
@@ -312,17 +195,33 @@ const addNewSubscriptionInvoice = asyncHandler(async (req, res) => {
         throw new Error('Customer not found');
     }
 
-    const isInternetServiceExists = await InternetService.findById(service);
-    if (!isInternetServiceExists) {
+    if (!isCustomerExists.service) {
         res.status(400);
-        throw new Error('Internet service not found');
+        throw new Error('Please assign a service to this customer first');
     }
+
+    const checkThisMonthInvoice = await SubscriptionInvoice.findOne({ customer, invoiceMonth });
+    if (checkThisMonthInvoice) {
+        res.status(400);
+        throw new Error('Customer already have invoice for the selected month');
+    }
+
+    const getService = await InternetService.findById(isCustomerExists.service);
 
     const result = await new SubscriptionInvoice(
         {
             customer: isCustomerExists._id,
-            service: isInternetServiceExists._id,
-            invoiceDate: new Date()
+            invoiceDate,
+            invoiceMonth,
+            paymentStatus,
+            createdBy: req.user.id,
+            service: {
+                ref: getService._id,
+                service: getService.service,
+                name: getService.name,
+                price: getService.price,
+                cost: getService.cost,
+            }
         }
     );
 
@@ -334,25 +233,50 @@ const addNewSubscriptionInvoice = asyncHandler(async (req, res) => {
     let lastCounter;
     if (getLastSubscriptionInvoice) {
         lastSerialNumber = getLastSubscriptionInvoice.serialNumber;
-        lastCounter = parseInt(lastSerialNumber.substring(7));
+        lastCounter = parseInt(lastSerialNumber.substring(10)); // Adjust substring to skip 'ExYYYYMM-'
     } else {
-        lastCounter = `000001`;
+        lastCounter = 1; // Start at 1 if no previous invoice
     }
 
     // to be checked
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth() + 1; // Add 1 because getMonth returns a zero-based index
-    const counter = lastCounter + 1;  // counter: starting 000001
-    const serialNumber = `Ex${year}${month.toString().padStart(2, '0')}-${counter.toString().padStart(6, '0')}`;
+    const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Add 1 because getMonth returns a zero-based index
+    const counter = getLastSubscriptionInvoice ? lastCounter + 1 : lastCounter;  // counter: starting 0
+    const paddedCounter = counter.toString().padStart(6, '0'); // Pad with zeros
+    const serialNumber = `Ex${year}${month}-${paddedCounter}`;
 
     result.serialNumber = serialNumber;
-    result.qrCode = `${process.env.CLIENT_URL}/subscription-invoice/${result._id}`;
+
+    if (paymentStatus === 'paid') {
+        result.paymentDate = paymentDate;
+        result.collector = req.user.id
+    }
 
     const saveSubIn = await result.save();
 
-    if (saveSubIn) {
-        res.status(200).json(result._id);
+    const newInvoice = await SubscriptionInvoice.findById(result._id)
+        .select('-__v -printHistory')
+        .populate({
+            path: 'customer',
+            select: 'fullName accountName arabicName phoneNumber address.city address.zone address.street',
+        })
+        .populate({
+            path: 'printedBy collector createdBy',
+            select: 'name'
+        })
+        .populate({
+            path: 'service.ref',
+            select: 'isp',
+            populate: {
+                path: 'isp',
+                select: 'code'
+            }
+        })
+        .lean();
+
+    if (saveSubIn && newInvoice) {
+        res.status(200).json({ message: 'Invoice added successfully', result: newInvoice });
     } else {
         res.status(400);
         throw new Error('Error creating new subscription invoice');
@@ -363,20 +287,14 @@ const addNewSubscriptionInvoice = asyncHandler(async (req, res) => {
 // @route   PUT /subscription-invoice/print/:id
 // @access  Private - authMiddleware
 const printSubscriptionInvoice = asyncHandler(async (req, res) => {
-    const { toBeCollectedNow } = req.body;
+    const { printDate } = req.body;
 
     if (!req.params.id) {
         res.status(400);
         throw new Error('Error, try again');
     }
 
-    if (!toBeCollectedNow) {
-        res.status(400);
-        throw new Error('Please check all fields');
-    }
-
     const isSubscriptionInvoiceExists = await SubscriptionInvoice.findById(req.params.id);
-
     if (!isSubscriptionInvoiceExists) {
         res.status(400);
         throw new Error('Subscription invoice not found');
@@ -385,19 +303,39 @@ const printSubscriptionInvoice = asyncHandler(async (req, res) => {
     const result = {
         $set: {
             printedBy: req.user.id,
-        }
+            printDate,
+            updatedBy: req.user.id
+        },
+        $push: {
+            printHistory: {
+                printedBy: req.user.id,
+                printDate,
+            }
+        },
     };
 
-    if (toBeCollectedNow) {
-        result.$set.collector = req.user.id;
-        result.$set.paymentStatus = 'paid';
-        result.$set.paymentDate = new Date();
-    }
-
-    const updateToPrint = await Subscription.findByIdAndUpdate(isSubscriptionInvoiceExists._id, result);
+    const updateToPrint = await SubscriptionInvoice.findByIdAndUpdate(isSubscriptionInvoiceExists._id, result, { new: true })
+        .select('-__v -printHistory')
+        .populate({
+            path: 'customer',
+            select: 'fullName arabicName accountName phoneNumber address.city address.zone address.street',
+        })
+        .populate({
+            path: 'printedBy collector createdBy',
+            select: 'name'
+        })
+        .populate({
+            path: 'service.ref',
+            select: 'isp',
+            populate: {
+                path: 'isp',
+                select: 'code'
+            }
+        })
+        .lean();
 
     if (updateToPrint) {
-        res.status(200).json({ message: 'Ready to be printed' });
+        res.status(200).json({ message: 'Printed', result: updateToPrint });
     } else {
         res.status(400);
         throw new Error('Error, try again');
@@ -431,36 +369,47 @@ const collectSubscriptionInvoice = asyncHandler(async (req, res) => {
             $set: {
                 collector: req.user.id,
                 paymentStatus: 'paid',
-                paymentDate: new Date()
+                paymentDate: new Date(),
+                updatedBy: req.user.id
             }
+        },
+        {
+            new: true,
         }
-    );
+    )
+        .select('-__v -printHistory')
+        .populate({
+            path: 'customer',
+            select: 'fullName accountName arabicName phoneNumber address.city address.zone address.street',
+        })
+        .populate({
+            path: 'printedBy collector createdBy',
+            select: 'name'
+        })
+        .populate({
+            path: 'service.ref',
+            select: 'isp',
+            populate: {
+                path: 'isp',
+                select: 'code'
+            }
+        })
+        .lean();
 
     if (collect) {
-        res.status(200).json({ message: 'Ready to be printed' });
+        res.status(200).json({ message: 'Ready to be printed', result: collect });
     } else {
         res.status(400);
         throw new Error('Error, please try again');
     }
 })
 
-// @desc    Update subscription invoice
-// @route   PUT /subscription-invoice/:id
-// @access  Private - authMiddleware
-
 module.exports = {
     getAllSubscriptionInvoices,
     getSpecificSubscriptionInvoice,
     getCustomerSubscriptionInvoices,
-    getSubscriptionInvoicesByIS,
-    getSubscriptionInvoiceByQrCode,
-    getSubscriptionInvoicesByPaymentStatus,
-    getSubscriptionInvoiceForCurrentMonth,
-    getSubscriptionInvoiceByRangeOfDate,
-    getSubscriptionInvoiceByCollector,
-    getSubscriptionInvoicePrintedBy,
-    getSubscriptionInvoiceBySerialNumber,
     addNewSubscriptionInvoice,
     printSubscriptionInvoice,
-    collectSubscriptionInvoice
+    collectSubscriptionInvoice,
+    getSubscriptionInvoicePrintHistory
 }

@@ -11,8 +11,7 @@ const {
     updateBoardIcon,
     updateBoardStatus,
     deleteBoard,
-    removeUserFromBoard,
-    addUserToBoard
+    updateBoardUsers
 } = require('../../controllers/scrumBoard');
 const auth = require('../../middleware/auth');
 
@@ -48,15 +47,10 @@ router.put('/position', auth, updateBoardsPosition);
 // @access  Private - authMiddleware
 router.put('/favoritePosition', auth, updateBoardFavoritePosition);
 
-// @desc    Remove user from board
-// @route   PUT /boards/user/remove/:id
+// @desc    Update board users
+// @route   PUT /boards/user/update/:id
 // @access  Private - authMiddleware
-router.put('/user/remove/:id', auth, removeUserFromBoard);
-
-// @desc    Add user to board
-// @route   PUT /boards/user/add/:id
-// @access  Private - authMiddleware
-router.put('/user/add/:id', auth, addUserToBoard);
+router.put('/user/update/:id', auth, updateBoardUsers);
 
 // @desc    Update Board title
 // @route   PUT /boards/title/:id

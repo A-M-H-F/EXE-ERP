@@ -35,6 +35,18 @@ const getUsersProfilePictures = asyncHandler(async (req, res) => {
     }
 })
 
+const getBuildingImage = asyncHandler(async (req, res) => {
+    const { src } = req.query
+
+    const filePath = path.join(__dirname, '..', '..', 'public', src);
+
+    if (filePath) {
+        res.status(200).sendFile(filePath)
+    } else {
+        res.status(400);
+        throw new Error('File not found')
+    }
+})
 
 // conditions check
 // if (src.startsWith('/images/support/ticket')) {
@@ -60,5 +72,6 @@ const getUsersProfilePictures = asyncHandler(async (req, res) => {
 
 module.exports = {
     getProfilePicture,
-    getUsersProfilePictures
+    getUsersProfilePictures,
+    getBuildingImage
 }

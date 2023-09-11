@@ -1,6 +1,6 @@
-const adminNotifications = (socket) => {
+const adminNotifications = (io, socket) => {
     socket.on('adminNotifications', (message) => {
-        socket.to('admin').emit('adminNotifications', message)
+        io.in('all').emit('adminNotifications',  { message });
     })
 }
 

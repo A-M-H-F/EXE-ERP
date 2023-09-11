@@ -107,10 +107,10 @@ const updateUserName = asyncHandler(async (req, res) => {
         .lean();
 
     if (result) {
-        res.status(200).json({ 
+        res.status(200).json({
             message: 'Username updated successfully',
             newUserInfo: result
-     })
+        })
     } else {
         res.status(400);
         throw new Error('Error updating username');
@@ -120,11 +120,11 @@ const updateUserName = asyncHandler(async (req, res) => {
 // @desc    Add New User
 // @route   POST /user
 // @access  Private - authMiddleware
-const addNewUser = asyncHandler(async (req, res) => {
-    const { name, username, password } = req.body
+const addNewUser = asyncHandler(async (req, res, next) => {
+    const { name, username, password, role } = req.query
 
     // check if all the fields are available
-    if (!username || !password || !name) {
+    if (!username || !password || !name || !role) {
         res.status(400);
         throw new Error('Please add all fields');
     }
@@ -164,18 +164,22 @@ const addNewUser = asyncHandler(async (req, res) => {
     const user = await new User({
         name,
         username,
-        password: hashedPassword
+        password: hashedPassword,
+        role
     });
 
     // save user
-    const saveUser = user.save();
+    const savedUser = await user.save();
 
-    if (saveUser) {
-        res.status(200).json({ message: "User added successfully" });
-    } else {
+    if (!savedUser) {
         res.status(400);
         throw new Error('Invalid user data');
     }
+
+    req.newUser = savedUser;
+    req.params.id = req.newUser._id;
+
+    next();
 })
 
 // @desc    Update User (Admin)
@@ -216,8 +220,16 @@ const updateUserAdmin = asyncHandler(async (req, res) => {
         }
     )
 
+    const updated = await User.findById(req.params.id)
+        .populate({
+            path: 'role',
+            select: 'name'
+        })
+        .select('-password -__v')
+        .lean();
+
     if (updateUser) {
-        res.status(200).json({ message: 'User data updated successfully' })
+        res.status(200).json({ message: 'User data updated successfully', updated })
     } else {
         res.status(400);
         throw new Error('Error updating user');
@@ -229,6 +241,11 @@ const updateUserAdmin = asyncHandler(async (req, res) => {
 // @access  Private - authMiddleware
 const updateUserPasswordAdmin = asyncHandler(async (req, res) => {
     const { password } = req.body;
+
+    if (!password) {
+        res.status(400);
+        throw new Error('Please add all fields');
+    }
 
     const checkUser = await User.findById(req.params.id).lean();
 
@@ -285,9 +302,9 @@ const updateUserRoleAdmin = asyncHandler(async (req, res) => {
             }
         }
     )
-
+    
     if (updateRole) {
-        res.status(200).json({ message: 'User role updated successfully' })
+        res.status(200).json({ message: 'User role updated successfully', roleName: checkRole.name })
     } else {
         res.status(400);
         throw new Error('Error updating user role');
@@ -329,8 +346,11 @@ const updateUserStatus = asyncHandler(async (req, res) => {
 // @access  Private - authMiddleware
 const getAllUsers = asyncHandler(async (req, res) => {
     const users = await User.find()
-        .populate('role')
-        .select('-password')
+        .populate({
+            path: 'role',
+            select: 'name'
+        })
+        .select('-password -__v')
         .lean();
 
     if (users) {
@@ -341,7 +361,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
     }
 })
 
-// @desc    Get All Users (name - _id) only
+// @desc    Get All Users (name - _id - picture) only
 // @route   GET /user/selection
 // @access  Private - authMiddleware
 const getAllUsersForSelection = asyncHandler(async (req, res) => {
@@ -414,6 +434,91 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
     }
 })
 
+// @desc    Upload profile picture admin
+// @route   PUT /user/picture/:id
+// @access  Private - authMiddleware
+const uploadProfilePictureAdmin = asyncHandler(async (req, res) => {
+    const userId = req.params.id;
+
+    if (!req.file) {
+        res.status(400);
+        throw new Error('No picture uploaded');
+    }
+
+    if (!req.params.id) {
+        res.status(400);
+        throw new Error('Please try again');
+    }
+
+    const getUser = await User.findById(userId).lean();
+    if (!getUser) {
+        res.status(400);
+        throw new Error('User not found');
+    }
+
+    const filePath = req.file.path.replace('public', '').replace(/\\/g, '/');
+
+    if (getUser.picture && getUser.picture !== '') {
+        const imagePath = getUser.picture
+        const absoluteImagePath = path.join(__dirname, '..', '..', 'public', imagePath);
+        fs.unlink(absoluteImagePath, (err) => {
+            if (err) {
+                // console.error('Error deleting image:', err);
+            } else {
+                // console.log('Image deleted successfully:', absoluteImagePath);
+            }
+        });
+    }
+
+    const result = await User.findByIdAndUpdate(
+        userId,
+        {
+            $set: {
+                picture: filePath
+            }
+        }
+    )
+
+    if (result) {
+        res.status(200).json({ message: 'User profile picture updated successfully', picPath: filePath });
+    } else {
+        res.status(400);
+        throw new Error('Error updating user profile picture');
+    }
+})
+
+const handleNewUserPic = asyncHandler(async (req, res, next) => {
+    const userId = req.params.id;
+
+    if (req.file) {
+        const filePath = req.file.path.replace('public', '').replace(/\\/g, '/');
+
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                $set: {
+                    picture: filePath
+                }
+            }
+        )
+    }
+
+    const newUser = await User.findById(userId)
+        .populate({
+            path: 'role',
+            select: 'name'
+        })
+        .select('-password -__v')
+        .lean();
+
+    if (newUser) {
+        res.status(200).json({ message: 'User added successfully', newUser });
+    } else {
+        res.status(400);
+        throw new Error('Error, try again');
+    }
+})
+
 module.exports = {
     addNewUser,
     getUserInfo,
@@ -426,5 +531,7 @@ module.exports = {
     updateUserPasswordAdmin,
     getSpecificUser,
     uploadProfilePicture,
-    getAllUsersForSelection
+    getAllUsersForSelection,
+    uploadProfilePictureAdmin,
+    handleNewUserPic
 }

@@ -2,28 +2,40 @@ const mongoose = require('mongoose');
 
 const subscriptionInvoiceSchema = mongoose.Schema(
     {
-        customer: { // full name - address - phone (client)
+        customer: { // full name - address - phone (client) - service(name)
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Customer'
         },
-        service: { // = name
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'InternetService'
-        },
-        qrCode: {
-            type: String,
-            unique: true
+        service: {
+            ref: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'InternetService'
+            },
+            service: {
+                type: String,
+            },
+            name: {
+                type: String,
+            },
+            price: {
+                type: Number,
+            },
+            cost: {
+                type: Number,
+            },
+            accountNumber: {
+                type: Number,
+            }
         },
         serialNumber: { // auto generated = EX(Year)(month)-(counter) //  counter starting 000001 >
             type: String,
             unique: true
         },
+        invoiceMonth: {
+            type: String,
+        },
         invoiceDate: {
             type: Date,
-        },
-        printedBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
         },
         collector: {
             type: mongoose.Schema.Types.ObjectId,
@@ -32,10 +44,36 @@ const subscriptionInvoiceSchema = mongoose.Schema(
         paymentStatus: {
             type: String,
             default: 'unPaid',
-            enum: ['Paid', 'unPaid']
+            enum: ['paid', 'unPaid']
         },
         paymentDate: {
             type: Date
+        },
+        printDate: {
+            type: Date
+        },
+        printedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        printHistory: [
+            {
+                printedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User'
+                },
+                printDate: {
+                    type: Date
+                },
+            }
+        ],
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
         },
     },
     {

@@ -19,7 +19,10 @@ const auth = asyncHandler(async (req, res, next) => {
             // Get user from the token
             req.user = await User.findById(decoded.id).select('-password');
 
-            if (req.user.status === 'inactive') throw new Error('Your account is inactive');;
+            if (
+                !req.path.startsWith('/logout') &&
+                req.user.status === 'inactive'
+            ) throw new Error('Your account is inactive');;
 
             next();
         } catch (error) {

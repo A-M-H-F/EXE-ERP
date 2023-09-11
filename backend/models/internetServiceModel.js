@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const internetServiceSchema = mongoose.Schema(
     {
         name: {
-            type: String
+            type: String,
+            required: true,
         },
         isp: {
             type: mongoose.Schema.Types.ObjectId,
@@ -11,7 +12,8 @@ const internetServiceSchema = mongoose.Schema(
         },
         service: {
             type: String,
-            unique: true
+            unique: true,
+            required: true,
         },
         cost: {
             type: Number,
@@ -21,6 +23,9 @@ const internetServiceSchema = mongoose.Schema(
             type: Number,
             required: true
         },
+        profit: {
+            type: Number,
+        },
         status: {
             type: String,
             enum: ['active', 'inactive'],
@@ -28,7 +33,15 @@ const internetServiceSchema = mongoose.Schema(
         },
         moreInfo: {
             type: String
-        }
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
     },
     {
         timestamps: true,

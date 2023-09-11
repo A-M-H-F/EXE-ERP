@@ -5,7 +5,33 @@ const Address = require('../../models/addressModel');
 // @route   GET /address
 // @access  Private - authMiddleware
 const getAllAddresses = asyncHandler(async (req, res) => {
-    const result = await Address.find().lean();
+    const result = await Address.find()
+        .select('-__v')
+        .populate({
+            path: 'createdBy updatedBy',
+            select: 'name'
+        })
+        .lean();
+
+    if (result) {
+        res.status(200).json(result);
+    } else {
+        res.status(400);
+        throw new Error('Error getting Addresses');
+    }
+})
+
+// @desc    Get Active addresses
+// @route   GET /address/status/active
+// @access  Private - authMiddleware
+const getActiveAddresses = asyncHandler(async (req, res) => {
+    const result = await Address.find({ status: 'active' })
+        .select('-__v')
+        .populate({
+            path: 'createdBy updatedBy',
+            select: 'name'
+        })
+        .lean();
 
     if (result) {
         res.status(200).json(result);
@@ -19,7 +45,9 @@ const getAllAddresses = asyncHandler(async (req, res) => {
 // @route   GET /address/:id
 // @access  Private - authMiddleware
 const getSpecificAddress = asyncHandler(async (req, res) => {
-    const result = await Address.findById(req.params.id).lean();
+    const result = await Address.findById(req.params.id)
+        .select('-__v -createdBy -updatedBy -createdAt -updatedAt')
+        .lean();
 
     if (result) {
         res.status(200).json(result);
@@ -59,12 +87,21 @@ const addNewAddress = asyncHandler(async (req, res) => {
     const newAddress = await Address.create(
         {
             city,
-            zones
+            zones,
+            createdBy: req.user.id,
         }
     )
 
+    const newCity = await Address.findById(newAddress._id)
+        .select('-__v')
+        .populate({
+            path: 'createdBy updatedBy',
+            select: 'name'
+        })
+        .lean();
+
     if (newAddress) {
-        res.status(200).json({ message: 'Address added successfully' });
+        res.status(200).json({ message: 'Address added successfully', newCity });
     } else {
         res.status(400);
         throw new Error('Error adding new address');
@@ -111,13 +148,23 @@ const updateAddress = asyncHandler(async (req, res) => {
         {
             $set: {
                 city,
-                zones
+                zones,
+                updatedBy: req.user.id,
             }
+        },
+        {
+            new: true
         }
-    );
+    )
+        .select('-__v')
+        .populate({
+            path: 'createdBy updatedBy',
+            select: 'name'
+        })
+        .lean();
 
     if (update) {
-        res.status(200).json({ message: 'Address updated successfully' });
+        res.status(200).json({ message: 'Address updated successfully', updated: update });
     } else {
         res.status(400);
         throw new Error('Error updating address');
@@ -141,7 +188,8 @@ const updateAddressStatus = asyncHandler(async (req, res) => {
         req.params.id,
         {
             $set: {
-                status: statusCondition
+                status: statusCondition,
+                updatedBy: req.user.id,
             }
         }
     );
@@ -154,10 +202,33 @@ const updateAddressStatus = asyncHandler(async (req, res) => {
     }
 })
 
+// @desc    Delete Address
+// @route   Delete /address/:id
+// @access  Private - authMiddleware
+const deleteAddress = asyncHandler(async (req, res) => {
+    const isExists = await Address.findById(req.params.id);
+
+    if (!isExists) {
+        res.status(400);
+        throw new Error('Address not found');
+    }
+
+    const result = await Address.findByIdAndDelete(isExists._id)
+
+    if (result) {
+        res.status(200).json({ message: `Address deleted successfully` })
+    } else {
+        res.status(400);
+        throw new Error('Error updating address status');
+    }
+})
+
 module.exports = {
     getAllAddresses,
+    getActiveAddresses,
     getSpecificAddress,
     addNewAddress,
     updateAddress,
-    updateAddressStatus
+    updateAddressStatus,
+    deleteAddress
 }
