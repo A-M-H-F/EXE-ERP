@@ -5,6 +5,8 @@
 **Author:** AMHF
 **Developer:** Hussein Istanbouli
 
+**Content Release:** Please note that content release for the ISP Management Platform will be managed in a professional and controlled manner, in accordance with the preferences and policies of Extreme Engineering.
+
 ## Technologies Used
 
 ### Backend
