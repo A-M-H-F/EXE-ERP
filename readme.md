@@ -132,6 +132,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+### Screenshots
+Here are some screenshots of the ISP Management Platform in action:
+
+1. ![Roles](https://imgur.com/ttyYQsO)
+2. ![Users](https://imgur.com/wRPe0XY)
+3. ![Invoices](https://imgur.com/8ltjsZ5)
+4. ![Customers](https://imgur.com/2QyVxpi)
+5. ![Scrum Board](https://imgur.com/iZirfVt)
+
 ### Short Description
 
 Introducing the ISP Management Platform - your all-in-one solution for efficiently managing your ISP company's operations. Powered by cutting-edge technologies like Node.js, React, and Socket.io, this platform offers a range of features, including table management, draggable scrum boards, user roles, and much more. Stay ahead of the game with our comprehensive dashboard and streamline your operations with ease. Try it out today and experience the future of ISP management.
