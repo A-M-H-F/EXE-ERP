@@ -139,7 +139,7 @@ Here are some screenshots of the ISP Management Platform in action:
 2. ![Users](https://imgur.com/wRPe0XY)
 3. ![Invoices](https://imgur.com/8ltjsZ5)
 4. ![Customers](https://imgur.com/2QyVxpi)
-5. ![Scrum Board](https://imgur.com/iZirfVt)
+5. ![Scrum Board](https://i.imgur.com/iZirfVt.png)
 
 ### Short Description
 
